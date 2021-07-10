@@ -1,9 +1,4 @@
-# Trial integration of 
-# - Sox 2 Day 20, 30, 40, and 60 Merge
-# - D5e Day 60 (EPCAM + tdT - 7AAD sorted)
-#
-# NOTE: Both datasets are included within the project directory as .rds files
-#       However, they've been excluded from the git repo via .gitignore
+# Reverse Integration Test lmao
 
 library(Seurat)
 library(tidyverse)
@@ -39,7 +34,7 @@ Sox2@assays$SCT <- NULL
 D5e@assays$SCT <- NULL
 
 # Now we'll begin the work of integration. Following the vignette found here: https://satijalab.org/seurat/articles/integration_introduction.html#performing-integration-on-datasets-normalized-with-sctransform-1
-otic.list <- list(Sox2, D5e)
+otic.list <- list(Sox2, D5e) %>% rev()
 otic.list <- lapply(otic.list, SCTransform)
 otic.features <- SelectIntegrationFeatures(object.list = otic.list,
                                            nfeatures = 3000)
@@ -48,26 +43,25 @@ otic.list <- PrepSCTIntegration(object.list = otic.list,
 otic.anchors <- FindIntegrationAnchors(object.list = otic.list,
                                        normalization.method = "SCT",
                                        anchor.features = otic.features)
-otic.combined <- IntegrateData(anchorset = otic.anchors,
+otic.reversed <- IntegrateData(anchorset = otic.anchors,
                                normalization.method = "SCT")
 rm(otic.anchors, otic.list)
 
-# Integration complete, now onto the standard workflow
-otic.combined <- RunPCA(otic.combined)
-otic.combined <- RunUMAP(otic.combined, reduction = "pca", dims = 1:15)
+otic.reversed <- RunPCA(otic.reversed)
+otic.reversed <- RunUMAP(otic.reversed, reduction = "pca", dims = 1:17)
 
 # Save/Load
-saveRDS(otic.combined, "Sox2_D5e_Integrated.rds")
-otic.combined <- readRDS("Sox2_D5e_Integrated.rds")
+saveRDS(otic.reversed, "D5e_Sox2_Integrated.rds")
+otic.reversed <- readRDS("D5e_Sox2_Integrated.rds")
 
 # Quick Examination Via Plotting
-PlotbyDay <- DimPlot(otic.combined, group.by = "Day")
-PlotbyCellLine <- DimPlot(otic.combined, group.by = "cell.line")
+PlotbyDay <- DimPlot(otic.reversed, group.by = "Day")
+PlotbyCellLine <- DimPlot(otic.reversed, group.by = "cell.line")
 
-otic.combined$previous_clusters <- otic.combined$seurat_clusters
-otic.combined$previous_clusters[otic.combined$cell.line == "Sox2"] <- "Sox2"
-DanClusterOverlay <- DimPlot(otic.combined, group.by = "previous_clusters", label = T, order = as.character(0:12), pt.size = 1.2,
-        cols = c("lightgrey", rainbow(13, 0.6, 0.9)))
+otic.reversed$previous_clusters <- otic.reversed$seurat_clusters
+otic.reversed$previous_clusters[otic.reversed$cell.line == "Sox2"] <- "Sox2"
+DanClusterOverlay <- DimPlot(otic.reversed, group.by = "previous_clusters", label = T, order = as.character(0:12), pt.size = 1.2,
+                             cols = c("lightgrey", rainbow(13, 0.6, 0.9)))
 
 #Save plots for sharing
 plotList <- list(
@@ -77,11 +71,10 @@ plotList <- list(
 )
 
 for(i in seq_len(length(plotList))) {
-  ggsave(filename = paste0("Plot", names(plotList)[i], ".png"),
+  ggsave(filename = paste0("RevInt_Plot", names(plotList)[i], ".png"),
          plot = plotList[[i]],
          device = "png",
          units = "in",
          height = 10,
          width = 10)
 }
-
