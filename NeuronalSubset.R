@@ -18,4 +18,12 @@ neuro.sub <- RunUMAP(neuro.sub, dims = 1:9)
 
 DimPlot(neuro.sub, group.by = "cell.line")
 DimPlot(neuro.sub, group.by = "previous_clusters")
-FeaturePlot(neuro.sub, features = "ATOH1", min.cutoff = 0, pt.size = 1.8, order = T)
+
+neuro.sub$DayCell <- paste0(neuro.sub$Day, neuro.sub$cell.line)
+DimPlot(neuro.sub, group.by = "DayCell", pt.size = 1.1)
+
+DefaultAssay(neuro.sub) <- "RNA"
+FeaturePlot(neuro.sub, features = "EPCAM", min.cutoff = 0, max.cutoff = 10, pt.size = 1.8, order = T, slot = "counts")
+
+
+
